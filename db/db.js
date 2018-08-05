@@ -1,5 +1,13 @@
-var mongoose = require('mongoose')
+import bcrypt from 'bcrypt'
+import mongoose from 'mongoose'
 const Schema = mongoose.Schema
+
+const userSchema = new Schema({
+	name : {type : String},
+	emailId : {type : String},
+	password : {type : String},
+	publisher : {type : Boolean}
+})
 
 const battleSchema = new Schema({
 	name : {type : String},
@@ -30,7 +38,48 @@ const battleSchema = new Schema({
 })
 
 var conn = mongoose.createConnection('mongodb://battleuser:battle1234@ds243041.mlab.com:43041/battledb')
+const user = conn.model('user', userSchema);
 const battles = conn.model('battles', battleSchema)
+
+const saveNewUser = (data, cb) => {
+	//Saving new user in DB.
+	const addNewUser = new user(data);
+	addNewUser.save((err, result) => {
+		if(err) {
+			cb(err, null)
+		} else {
+			cb(null, result);
+		}
+	})
+}
+
+const checkUser = (data, cb) => {
+	user.findOne({emailId : data.emailId}, (err, result) => {
+		if (result) {
+			bcrypt.compare(data.password, result.password, (err, passwordMatching) => {
+				if (passwordMatching) {
+					cb(null, result)
+				} else {
+					cb(null, passwordMatching)
+				}	
+			})
+		} else {
+			cb(err, null)
+		}
+	})
+}
+
+const checkExistenceOfUser = (data, cb) => {
+	user.findOne({emailId : data.emailId}, (err, result) => {
+		if (err) {
+			cb(false)
+		} else if (result) {
+			cb(true);
+		} else {
+			cb(false)
+		}
+	})
+}
 
 const getlistOfBattlesLocation = (cb) => {
 	battles.find({}, {location: 1, _id:0}, (err, result) => {
@@ -110,6 +159,9 @@ const searchBattlesDetails = (searchObject, cb) => {
 	})
 }
 
+module.exports.saveNewUser = saveNewUser
+module.exports.checkUser = checkUser
+module.exports.checkExistenceOfUser = checkExistenceOfUser
 module.exports.getlistOfBattlesLocation = getlistOfBattlesLocation
 module.exports.getTotalNumberOfBattleOccured = getTotalNumberOfBattleOccured
 module.exports.getMostActiveBasedOnKey = getMostActiveBasedOnKey
