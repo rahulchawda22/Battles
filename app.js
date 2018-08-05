@@ -85,7 +85,7 @@ app.all('*', (req, res) => {
 	res.send(errMsg)
 })
 
-
-app.listen(3333, () => {
-	console.log("Listening on port 3333");
+let port = process.env.PORT ? process.env.PORT : 8000
+app.listen(port, () => {
+	console.log("Listening on port "+ port);
 })
